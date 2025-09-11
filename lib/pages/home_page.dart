@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'signup_page.dart'; // for ModernWavyAppBar
+import 'package:flutter/services.dart';
+import '../utils/routes.dart';
+import '../widgets/modern_wavy_app_bar.dart';
+import '../models/user_profile.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -9,19 +12,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  @override
+  void initState() {
+    super.initState();
+    _checkProfileCompletion();
+  }
 
-  static const List<String> _titles = [
-    'Welcome Home!',
-    'Your Profile',
-    'Your Documents',
-  ];
-
-  static const List<IconData> _icons = [
-    Icons.home_rounded,
-    Icons.person_rounded,
-    Icons.description_rounded,
-  ];
+  void _checkProfileCompletion() {
+    final user = UserProfile.instance;
+    // Check if essential profile fields are filled
+    if (user.name.isEmpty || user.dob.isEmpty || user.age.isEmpty) {
+      // Redirect to profile page if profile is incomplete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, AppRoutes.profile);
+      });
+    }
+  }
 
   Widget _buildNeumorphicCard(String title, IconData icon, String subtitle) {
     return Container(
@@ -121,120 +127,150 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Center(
-                child: Container(
-                  width: 380,
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 18,
-                    horizontal: 8,
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.heartRate);
+                  },
+                  child: Container(
+                    width: 380,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 18,
+                      horizontal: 8,
                     ),
-                    borderRadius: BorderRadius.circular(36),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.8),
-                        offset: const Offset(-4, -4),
-                        blurRadius: 10,
-                        spreadRadius: 1,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      BoxShadow(
-                        color: const Color.fromARGB(
-                          255,
-                          5,
-                          5,
-                          167,
-                        ).withOpacity(0.12),
-                        offset: const Offset(4, 4),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 1.9,
-                        child: Image.asset(
-                          'assert/module1.png',
-                          fit: BoxFit.contain,
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.8),
+                          offset: const Offset(-4, -4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Check Heart Rate',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color.fromARGB(255, 44, 66, 113),
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            255,
+                            5,
+                            5,
+                            167,
+                          ).withOpacity(0.12),
+                          offset: const Offset(4, 4),
+                          blurRadius: 12,
+                          spreadRadius: 1,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1.9,
+                          child: Image.asset(
+                            'assert/module1.png',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Check Heart Rate',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromARGB(255, 44, 66, 113),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap to measure',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               Center(
-                child: Container(
-                  width: 380,
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 18,
-                    horizontal: 8,
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.bpMeasurement);
+                  },
+                  child: Container(
+                    width: 380,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 18,
+                      horizontal: 8,
                     ),
-                    borderRadius: BorderRadius.circular(36),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.8),
-                        offset: const Offset(-4, -4),
-                        blurRadius: 10,
-                        spreadRadius: 1,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      BoxShadow(
-                        color: const Color.fromARGB(
-                          255,
-                          5,
-                          5,
-                          167,
-                        ).withOpacity(0.12),
-                        offset: const Offset(4, 4),
-                        blurRadius: 12,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 1.9,
-                        child: Image.asset(
-                          'assert/module2.png',
-                          fit: BoxFit.contain,
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.8),
+                          offset: const Offset(-4, -4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Check BP Rate',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color.fromARGB(255, 44, 66, 113),
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            255,
+                            5,
+                            5,
+                            167,
+                          ).withOpacity(0.12),
+                          offset: const Offset(4, 4),
+                          blurRadius: 12,
+                          spreadRadius: 1,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1.9,
+                          child: Image.asset(
+                            'assert/module2.png',
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Check BP Rate',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color.fromARGB(255, 44, 66, 113),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap to measure',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -258,23 +294,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _onItemTapped(int index) {
-    print('Tab tapped: $index');
-    if (index == 1) {
-      print('Navigating to /profile');
-      Navigator.pushNamed(context, '/profile');
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Set status bar to light mode for white text
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
         return false;
       },
       child: Scaffold(
@@ -326,12 +353,12 @@ class _HomePageState extends State<HomePage> {
             currentIndex: 0, // Home tab selected
             onTap: (index) {
               if (index == 0) {
-                Navigator.pushReplacementNamed(context, '/home');
+                Navigator.pushReplacementNamed(context, AppRoutes.home);
               } else if (index == 1) {
-                Navigator.pushReplacementNamed(context, '/profile');
+                Navigator.pushReplacementNamed(context, AppRoutes.profile);
               } else if (index == 2) {
                 // If you have a Document page, navigate to it
-                // Navigator.pushReplacementNamed(context, '/document');
+                // Navigator.pushReplacementNamed(context, AppRoutes.documents);
               }
             },
             items: [

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../utils/routes.dart';
+import '../widgets/modern_wavy_app_bar.dart';
+import '../services/firebase_auth_service.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
   const ForgetPasswordPage({Key? key}) : super(key: key);
@@ -9,18 +12,236 @@ class ForgetPasswordPage extends StatefulWidget {
 
 class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
+  final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
   bool _isButtonEnabled = false;
+  bool _isLoading = false;
+  bool _isEmailValid = true;
+  String _emailError = '';
 
   void _validateFields() {
     setState(() {
-      _isButtonEnabled = _emailController.text.isNotEmpty;
+      _isButtonEnabled = _emailController.text.isNotEmpty && _isEmailValid;
     });
+  }
+
+  void _validateEmail(String email) {
+    setState(() {
+      if (email.isEmpty) {
+        _isEmailValid = true;
+        _emailError = '';
+      } else {
+        // Simple but effective email validation
+        final trimmedEmail = email.trim();
+        if (_isValidEmailFormat(trimmedEmail)) {
+          _isEmailValid = true;
+          _emailError = '';
+        } else {
+          _isEmailValid = false;
+          _emailError = 'Please enter a valid email address';
+        }
+      }
+      _validateFields();
+    });
+  }
+
+  bool _isValidEmailFormat(String email) {
+    // Comprehensive email validation regex
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    if (!_isButtonEnabled || _isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Add debug logging
+      print('Sending password reset email to: ${_emailController.text.trim()}');
+
+      final result = await _firebaseAuthService.sendPasswordResetEmail(
+        _emailController.text.trim(),
+      );
+
+      print('Password reset result: ${result.isSuccess} - ${result.message}');
+
+      if (result.isSuccess) {
+        // Show success message
+        if (mounted) {
+          _showSuccessDialog();
+        }
+      } else {
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show generic error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: const Color.fromARGB(255, 215, 223, 247),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color.fromARGB(255, 40, 167, 69),
+                      Color.fromARGB(255, 34, 197, 94),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color.fromARGB(
+                        255,
+                        40,
+                        167,
+                        69,
+                      ).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Reset Link Sent!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Color.fromARGB(255, 44, 66, 113),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'We\'ve sent a password reset link to:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _emailController.text.trim(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color.fromARGB(255, 44, 66, 113),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Please check your email and click the link to reset your password.',
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 40, 167, 69),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    elevation: 4,
+                    shadowColor: const Color.fromARGB(
+                      255,
+                      40,
+                      167,
+                      69,
+                    ).withOpacity(0.3),
+                  ),
+                  child: const Text(
+                    'Back to Login',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    _emailController.addListener(_validateFields);
+    _emailController.addListener(() {
+      _validateEmail(_emailController.text);
+    });
   }
 
   @override
@@ -37,6 +258,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         children: [
           ModernWavyAppBar(
             height: 140,
+            onBack: () => Navigator.pop(context),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [const SizedBox(height: 48)],
@@ -94,11 +316,11 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Email Address',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.black87,
+                        color: _isEmailValid ? Colors.black87 : Colors.red,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -145,7 +367,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           style: const TextStyle(fontSize: 16),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Enter your email address',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
@@ -158,24 +380,56 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                         ),
                       ),
                     ),
+                    // Email error message
+                    if (_emailError.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 18),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.shade600,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _emailError,
+                                style: TextStyle(
+                                  color: Colors.red.shade600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 28),
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isButtonEnabled
+                        onTap: _isButtonEnabled && !_isLoading
                             ? () {
-                                // TODO: Implement password reset logic
+                                _sendPasswordResetEmail();
                               }
                             : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.ease,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color.fromARGB(255, 1, 25, 59),
-                                Color.fromARGB(255, 1, 29, 48),
-                              ],
+                            gradient: LinearGradient(
+                              colors: _isButtonEnabled && !_isLoading
+                                  ? const [
+                                      Color.fromARGB(255, 1, 25, 59),
+                                      Color.fromARGB(255, 1, 29, 48),
+                                    ]
+                                  : const [
+                                      Color.fromARGB(255, 150, 150, 150),
+                                      Color.fromARGB(255, 120, 120, 120),
+                                    ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -185,24 +439,46 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'Send Reset Link',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
+                              if (_isLoading) ...[
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white.withOpacity(0.8),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Sending...',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Send Reset Link',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isButtonEnabled
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.7),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 22,
                                   color: _isButtonEnabled
                                       ? Colors.white
-                                      : Colors.white,
+                                      : Colors.white.withOpacity(0.7),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 22,
-                                color: _isButtonEnabled
-                                    ? Colors.white
-                                    : Colors.grey,
-                              ),
+                              ],
                             ],
                           ),
                         ),
@@ -220,7 +496,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           onPressed: () {
                             Navigator.of(
                               context,
-                            ).pushReplacementNamed('/login');
+                            ).pushReplacementNamed(AppRoutes.login);
                           },
                           child: const Text(
                             'Back to Login',
@@ -232,7 +508,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -242,87 +517,4 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       ),
     );
   }
-}
-
-class ModernWavyAppBar extends StatelessWidget {
-  final double height;
-  final Widget? child;
-  final VoidCallback? onBack;
-  const ModernWavyAppBar({Key? key, this.height = 140, this.child, this.onBack})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: height,
-      child: Stack(
-        children: [
-          // 1. Draw the wavy background first
-          ClipPath(
-            clipper: _ModernWavyClipper(),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 1, 25, 59),
-                    Color.fromARGB(255, 1, 29, 48),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-          ),
-          // 2. Draw the child (title, etc)
-          if (child != null)
-            Positioned.fill(
-              child: Align(alignment: Alignment.topCenter, child: child),
-            ),
-          // 3. Draw the back arrow LAST so it's always on top
-          if (onBack != null)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8.0, top: 8.0),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 30,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                  ),
-                  onPressed: onBack,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModernWavyClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height * 0.9,
-      size.width * 0.5,
-      size.height * 0.7,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.75,
-      size.height * 0.5,
-      size.width,
-      size.height * 0.7,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

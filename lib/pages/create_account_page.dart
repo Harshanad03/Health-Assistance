@@ -1,33 +1,7 @@
 import 'package:flutter/material.dart';
-
-// Singleton to store user profile details
-class UserProfile {
-  static final UserProfile instance = UserProfile._();
-  UserProfile._();
-
-  String? name;
-  String? age;
-  String? dob;
-  String? sex;
-  String? phone;
-  String? pincode;
-
-  void update({
-    String? name,
-    String? age,
-    String? dob,
-    String? sex,
-    String? phone,
-    String? pincode,
-  }) {
-    this.name = name;
-    this.age = age;
-    this.dob = dob;
-    this.sex = sex;
-    this.phone = phone;
-    this.pincode = pincode;
-  }
-}
+import '../utils/routes.dart';
+import '../widgets/modern_wavy_app_bar.dart';
+import '../models/user_profile.dart';
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({Key? key}) : super(key: key);
@@ -126,34 +100,14 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         children: [
           ModernWavyAppBar(
             height: 140,
+            onBack: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.login,
+              (route) => false,
+            ),
             child: Stack(children: [const SizedBox(height: 48)]),
           ),
-          // Always-working back arrow for web
-          Positioned(
-            top: 0,
-            left: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8.0, top: 8.0),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 30,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                  ),
-                  onPressed: () {
-                    print('Back arrow tapped! Forcing browser hash to /login');
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          // Title positioned below app bar
           Positioned(
             top: 130,
             left: 0,
@@ -321,7 +275,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                           );
                           Navigator.pushNamedAndRemoveUntil(
                             context,
-                            '/home',
+                            AppRoutes.profile,
                             (route) => false,
                           );
                         },
@@ -455,72 +409,4 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       ],
     );
   }
-}
-
-class ModernWavyAppBar extends StatelessWidget {
-  final double height;
-  final Widget? child;
-  final VoidCallback? onBack;
-  const ModernWavyAppBar({Key? key, this.height = 140, this.child, this.onBack})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: height,
-      child: Stack(
-        children: [
-          // 1. Draw the wavy background first
-          ClipPath(
-            clipper: _ModernWavyClipper(),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 1, 25, 59),
-                    Color.fromARGB(255, 1, 29, 48),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-          ),
-          // 2. Draw the child (title, etc)
-          if (child != null)
-            Positioned.fill(
-              child: Align(alignment: Alignment.topCenter, child: child),
-            ),
-          // 3. Remove the back arrow IconButton
-        ],
-      ),
-    );
-  }
-}
-
-class _ModernWavyClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height * 0.9,
-      size.width * 0.5,
-      size.height * 0.7,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.75,
-      size.height * 0.5,
-      size.width,
-      size.height * 0.7,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

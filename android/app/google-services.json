@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "905297662812",
+    "project_id": "health-assistant-a4ab2",
+    "storage_bucket": "health-assistant-a4ab2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:905297662812:android:ef593e4fc3a409fb5c6799",
+        "android_client_info": {
+          "package_name": "com.example.project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "905297662812-6dkih4h36mg2mqrnruj8mdjpgu73g1va.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.project",
+            "certificate_hash": "6c2d5965b17f05fc44d5fc97116e95f0ace926b7"
+          }
+        },
+        {
+          "client_id": "905297662812-bol7ni7n2qns4p1p1gapohd75e13tt1i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiSM_vBspKrcFFgq5kuQTenZtAQlA7Or4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "905297662812-bol7ni7n2qns4p1p1gapohd75e13tt1i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "905297662812-k3sj74l9ekp5nlcgn79hmg964job735u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.project"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

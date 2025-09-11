@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../utils/routes.dart';
+import '../widgets/modern_wavy_app_bar.dart';
+import '../services/google_auth_service.dart';
+import '../services/firebase_auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -12,19 +17,121 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isButtonEnabled = false;
+  bool _isEmailValid = true;
+  String _emailError = '';
+  bool _isLoading = false;
+  final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
 
   void _validateFields() {
     setState(() {
       _isButtonEnabled =
           _emailController.text.isNotEmpty &&
-          _passwordController.text.length >= 8;
+          _passwordController.text.length >= 8 &&
+          _isEmailValid;
     });
+  }
+
+  void _validateEmail(String email) {
+    setState(() {
+      if (email.isEmpty) {
+        _isEmailValid = true;
+        _emailError = '';
+      } else {
+        // Simple but effective email validation
+        final trimmedEmail = email.trim();
+        if (_isValidEmailFormat(trimmedEmail)) {
+          _isEmailValid = true;
+          _emailError = '';
+        } else {
+          _isEmailValid = false;
+          _emailError = 'Please enter a valid email address';
+        }
+      }
+      _validateFields();
+    });
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_isButtonEnabled || _isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await _firebaseAuthService.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (result.isSuccess && result.user != null) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Welcome back ${result.user!.displayName ?? result.user!.email}!',
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Navigate to home page after successful login
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.profile,
+            (route) => false,
+          );
+        }
+      } else {
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show generic error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  bool _isValidEmailFormat(String email) {
+    // Comprehensive email validation regex
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
   }
 
   @override
   void initState() {
     super.initState();
-    _emailController.addListener(_validateFields);
+    _emailController.addListener(() {
+      _validateEmail(_emailController.text);
+    });
     _passwordController.addListener(_validateFields);
   }
 
@@ -38,6 +145,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
+    // Set status bar to light mode for white text
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 215, 223, 247),
       body: Stack(
@@ -115,12 +226,26 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
+                        gradient: LinearGradient(
+                          colors: _isEmailValid || _emailController.text.isEmpty
+                              ? [
+                                  const Color(0xFFE8EAFE),
+                                  const Color(0xFFD6E0FF),
+                                ]
+                              : [
+                                  const Color(0xFFFFE8E8),
+                                  const Color(0xFFFFD6D6),
+                                ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(30),
+                        border: _isEmailValid || _emailController.text.isEmpty
+                            ? null
+                            : Border.all(
+                                color: Colors.red.withOpacity(0.6),
+                                width: 2,
+                              ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withOpacity(0.8),
@@ -129,12 +254,15 @@ class _LoginPageState extends State<LoginPage> {
                             spreadRadius: 1,
                           ),
                           BoxShadow(
-                            color: Color.fromARGB(
-                              255,
-                              5,
-                              5,
-                              167,
-                            ).withOpacity(0.4),
+                            color:
+                                _isEmailValid || _emailController.text.isEmpty
+                                ? Color.fromARGB(
+                                    255,
+                                    5,
+                                    5,
+                                    167,
+                                  ).withOpacity(0.4)
+                                : Colors.red.withOpacity(0.3),
                             offset: const Offset(4, 4),
                             blurRadius: 12,
                             spreadRadius: 1,
@@ -151,23 +279,81 @@ class _LoginPageState extends State<LoginPage> {
                             context,
                           ).colorScheme.copyWith(secondary: Colors.transparent),
                         ),
-                        child: TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(fontSize: 16),
-                          decoration: const InputDecoration(
-                            hintText: 'dilleragip@gmail.com',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 18,
+                        child: Focus(
+                          onFocusChange: (hasFocus) {
+                            // setState(() {
+                            //   _isEmailFocused = hasFocus;
+                            // });
+                          },
+                          child: TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color:
+                                  _isEmailValid || _emailController.text.isEmpty
+                                  ? Colors.black87
+                                  : Colors.red.shade700,
                             ),
-                            fillColor: Colors.transparent,
-                            filled: true,
+                            decoration: InputDecoration(
+                              hintText: 'dilleragip@gmail.com',
+                              hintStyle: TextStyle(
+                                color:
+                                    _isEmailValid ||
+                                        _emailController.text.isEmpty
+                                    ? Colors.grey.shade500
+                                    : Colors.red.shade300,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                                horizontal: 18,
+                              ),
+                              fillColor: Colors.transparent,
+                              filled: true,
+                              suffixIcon: _emailController.text.isNotEmpty
+                                  ? Icon(
+                                      _isEmailValid
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color: _isEmailValid
+                                          ? Colors.green
+                                          : Colors.red,
+                                      size: 20,
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
                       ),
                     ),
+                    // Email error message
+                    if (_emailError.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 18),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.shade600,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _emailError,
+                                style: TextStyle(
+                                  color: Colors.red.shade600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 22),
                     // Neumorphic password field
                     const Text(
@@ -250,22 +436,23 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/home',
-                            (route) => false,
-                          );
-                        },
+                        onTap: _isButtonEnabled && !_isLoading
+                            ? _handleLogin
+                            : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.ease,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color.fromARGB(255, 1, 25, 59),
-                                Color.fromARGB(255, 1, 29, 48),
-                              ],
+                            gradient: LinearGradient(
+                              colors: _isButtonEnabled && !_isLoading
+                                  ? [
+                                      const Color.fromARGB(255, 1, 25, 59),
+                                      const Color.fromARGB(255, 1, 29, 48),
+                                    ]
+                                  : [
+                                      Colors.grey.shade400,
+                                      Colors.grey.shade500,
+                                    ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -275,24 +462,33 @@ class _LoginPageState extends State<LoginPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'Continue',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: _isButtonEnabled
-                                      ? Colors.white
-                                      : Colors.white,
+                              if (_isLoading)
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              else ...[
+                                Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 22,
-                                color: _isButtonEnabled
-                                    ? Colors.white
-                                    : Colors.grey,
-                              ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 22,
+                                  color: Colors.white,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -303,9 +499,10 @@ class _LoginPageState extends State<LoginPage> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          Navigator.of(
+                          Navigator.pushNamed(
                             context,
-                          ).pushReplacementNamed('/forget_password');
+                            AppRoutes.forgetPassword,
+                          );
                         },
                         child: const Text(
                           'Forgot password?',
@@ -317,6 +514,173 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 30),
+
+                    // Divider with "OR" text
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'OR',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Google Sign-In Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: GestureDetector(
+                        onTap: _isLoading
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+
+                                try {
+                                  final googleAuthService = GoogleAuthService();
+                                  final result = await googleAuthService
+                                      .signInWithGoogle();
+
+                                  if (result != null && result.user != null) {
+                                    // Successfully signed in with Google
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Welcome back ${result.user!.displayName ?? result.user!.email}!',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+
+                                      Navigator.pushNamedAndRemoveUntil(
+                                        context,
+                                        AppRoutes.profile,
+                                        (route) => false,
+                                      );
+                                    }
+                                  } else {
+                                    // Handle sign-in failure
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Google Sign-In failed. Please try again.',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  // Handle Firebase/Google Sign-In errors
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Google Sign-In not available. Please configure Firebase first.',
+                                        ),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
+                                }
+                              },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_isLoading)
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.grey.shade600,
+                                    ),
+                                  ),
+                                )
+                              else ...[
+                                // Google Icon
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Image.asset(
+                                    'assert/google_logo.png',
+                                    width: 24,
+                                    height: 24,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Continue with Google',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -326,9 +690,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).pushReplacementNamed('/signup');
+                            Navigator.pushNamed(context, AppRoutes.signup);
                           },
                           child: const Text(
                             'Sign up',
@@ -350,87 +712,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}
-
-class ModernWavyAppBar extends StatelessWidget {
-  final double height;
-  final Widget? child;
-  final VoidCallback? onBack;
-  const ModernWavyAppBar({Key? key, this.height = 140, this.child, this.onBack})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: height,
-      child: Stack(
-        children: [
-          // 1. Draw the wavy background first
-          ClipPath(
-            clipper: _ModernWavyClipper(),
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 1, 25, 59),
-                    Color.fromARGB(255, 1, 29, 48),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-          ),
-          // 2. Draw the child (title, etc)
-          if (child != null)
-            Positioned.fill(
-              child: Align(alignment: Alignment.topCenter, child: child),
-            ),
-          // 3. Draw the back arrow LAST so it's always on top
-          if (onBack != null)
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8.0, top: 8.0),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 30,
-                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                  ),
-                  onPressed: onBack,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModernWavyClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height * 0.9,
-      size.width * 0.5,
-      size.height * 0.7,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.75,
-      size.height * 0.5,
-      size.width,
-      size.height * 0.7,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
