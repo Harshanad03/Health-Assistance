@@ -20,9 +20,8 @@ class _HomePageState extends State<HomePage> {
 
   void _checkProfileCompletion() {
     final user = UserProfile.instance;
-    // Check if essential profile fields are filled
+
     if (user.name.isEmpty || user.dob.isEmpty || user.age.isEmpty) {
-      // Redirect to profile page if profile is incomplete
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, AppRoutes.profile);
       });
@@ -84,7 +83,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Helper to build a neumorphic circle icon
   Widget _buildCircleIcon(IconData icon, bool selected) {
     return Container(
       width: 34,
@@ -92,12 +90,13 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: selected ? const Color(0xFFE8EAFE) : const Color(0xFFD6E0FF),
-        border: selected
-            ? Border.all(
-                color: const Color.fromARGB(255, 44, 66, 113),
-                width: 2,
-              )
-            : null,
+        border:
+            selected
+                ? Border.all(
+                  color: const Color.fromARGB(255, 44, 66, 113),
+                  width: 2,
+                )
+                : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -109,9 +108,8 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Icon(
         icon,
-        color: selected
-            ? const Color.fromARGB(255, 44, 66, 113)
-            : Colors.black38,
+        color:
+            selected ? const Color.fromARGB(255, 44, 66, 113) : Colors.black38,
         size: 20,
       ),
     );
@@ -120,7 +118,6 @@ class _HomePageState extends State<HomePage> {
   Widget _buildPage(int index) {
     switch (index) {
       case 0:
-        // Home tab: show two image boxes stacked vertically in a column, reduced width
         return SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),
           child: Column(
@@ -171,7 +168,7 @@ class _HomePageState extends State<HomePage> {
                         AspectRatio(
                           aspectRatio: 1.9,
                           child: Image.asset(
-                            'assert/module1.png',
+                            'assets/module1.png',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -245,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                         AspectRatio(
                           aspectRatio: 1.9,
                           child: Image.asset(
-                            'assert/module2.png',
+                            'assets/module2.png',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -296,12 +293,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar to light mode for white text
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
+        SystemNavigator.pop();
         return false;
       },
       child: Scaffold(
@@ -356,10 +352,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.pushReplacementNamed(context, AppRoutes.home);
               } else if (index == 1) {
                 Navigator.pushReplacementNamed(context, AppRoutes.profile);
-              } else if (index == 2) {
-                // If you have a Document page, navigate to it
-                // Navigator.pushReplacementNamed(context, AppRoutes.documents);
-              }
+              } else if (index == 2) {}
             },
             items: [
               BottomNavigationBarItem(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
+import '../services/firestore_profile_service.dart';
 import '../widgets/modern_wavy_app_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -30,29 +31,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _dobController = TextEditingController(text: user.dob ?? '');
     _phoneController = TextEditingController(text: user.phone ?? '');
     _pincodeController = TextEditingController(text: user.pincode ?? '');
-    // Ensure the sex value matches exactly one of the dropdown options
+
     _sex = _validateSexValue(user.sex);
   }
 
   String? _validateSexValue(String? sex) {
     if (sex == null) return null;
-    // Convert to proper case and check if it matches dropdown options
+
     final validOptions = ['Male', 'Female', 'Other'];
     final normalizedSex = sex.trim();
 
-    // Check for exact match first
     if (validOptions.contains(normalizedSex)) {
       return normalizedSex;
     }
 
-    // Check for case-insensitive match
     for (final option in validOptions) {
       if (option.toLowerCase() == normalizedSex.toLowerCase()) {
         return option; // Return the properly cased option
       }
     }
 
-    // If no match found, return null (will show hint text)
     return null;
   }
 
@@ -115,7 +113,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
     } catch (e) {
-      // Handle error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -128,9 +125,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _showImagePickerDialog() {
-    // Check if image picker is available
     try {
-      // Test if the plugin is available by checking if we can create an instance
       if (_picker != null) {
         showDialog(
           context: context,
@@ -203,7 +198,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         throw Exception('Image picker not initialized');
       }
     } catch (e) {
-      // Show error if image picker is not available
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -218,7 +212,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _saveProfile() {
-    // Validate required fields
     if (_nameController.text.trim().isEmpty) {
       _showErrorDialog('Name is required');
       return;
@@ -239,7 +232,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    // Save the profile
     UserProfile.instance.update(
       name: _nameController.text.trim(),
       age: _ageController.text.trim(),
@@ -250,8 +242,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       profilePicture: _selectedImage?.path,
     );
 
-    // Show success message and go back
-    _showSuccessDialog();
+    FirestoreProfileService()
+        .saveUserProfile(UserProfile.instance)
+        .then((_) {
+          _showSuccessDialog();
+        })
+        .catchError((e) {
+          _showErrorDialog('Failed to save profile to cloud: $e');
+        });
   }
 
   void _showErrorDialog(String message) {
@@ -446,13 +444,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 fillColor: Colors.transparent,
                 filled: true,
-                suffixIcon: suffixIcon != null
-                    ? Icon(
-                        suffixIcon,
-                        color: const Color.fromARGB(255, 44, 66, 113),
-                        size: 20,
-                      )
-                    : null,
+                suffixIcon:
+                    suffixIcon != null
+                        ? Icon(
+                          suffixIcon,
+                          color: const Color.fromARGB(255, 44, 66, 113),
+                          size: 20,
+                        )
+                        : null,
               ),
             ),
           ),
@@ -467,7 +466,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: const Color.fromARGB(255, 215, 223, 247),
       body: Column(
         children: [
-          // Fixed App Bar
           ModernWavyAppBar(
             height: 140,
             onBack: () => Navigator.pop(context),
@@ -476,14 +474,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [const SizedBox(height: 48)],
             ),
           ),
-          // Scrollable Content
+
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 32),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // Title
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: Text(
@@ -497,7 +495,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Form Container
+
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     padding: const EdgeInsets.symmetric(
@@ -519,7 +517,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Profile Picture Section
                         Center(
                           child: Column(
                             children: [
@@ -533,28 +530,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: const Color(0xFFD6E0FF),
-                                        image: _selectedImage != null
-                                            ? DecorationImage(
-                                                image: FileImage(
-                                                  _selectedImage!,
+                                        image:
+                                            _selectedImage != null
+                                                ? DecorationImage(
+                                                  image: FileImage(
+                                                    _selectedImage!,
+                                                  ),
+                                                  fit: BoxFit.cover,
+                                                )
+                                                : (UserProfile.instance.sex
+                                                        ?.toLowerCase() ==
+                                                    'male')
+                                                ? const DecorationImage(
+                                                  image: AssetImage(
+                                                    'assets/profile_male.jpg',
+                                                  ),
+                                                  fit: BoxFit.cover,
+                                                )
+                                                : const DecorationImage(
+                                                  image: AssetImage(
+                                                    'assets/profile_female.jpg',
+                                                  ),
+                                                  fit: BoxFit.cover,
                                                 ),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : (UserProfile.instance.sex
-                                                      ?.toLowerCase() ==
-                                                  'male')
-                                            ? const DecorationImage(
-                                                image: AssetImage(
-                                                  'assert/profile_male.jpg',
-                                                ),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : const DecorationImage(
-                                                image: AssetImage(
-                                                  'assert/profile_female.jpg',
-                                                ),
-                                                fit: BoxFit.cover,
-                                              ),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black.withOpacity(

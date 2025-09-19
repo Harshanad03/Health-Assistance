@@ -1,11 +1,11 @@
 {
-    "name": "project",
-    "short_name": "project",
+    "name": "AUVI",
+    "short_name": "AUVI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "AUVI - Advanced Health Monitoring Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

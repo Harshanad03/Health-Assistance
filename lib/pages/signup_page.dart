@@ -4,6 +4,8 @@ import '../utils/routes.dart';
 import '../widgets/modern_wavy_app_bar.dart';
 import '../services/google_auth_service.dart';
 import '../services/firebase_auth_service.dart';
+import '../services/local_storage_service.dart';
+import '../models/user_profile.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -42,7 +44,6 @@ class _SignupPageState extends State<SignupPage> {
         _isEmailValid = true;
         _emailError = '';
       } else {
-        // Simple but effective email validation
         final trimmedEmail = email.trim();
         if (_isValidEmailFormat(trimmedEmail)) {
           _isEmailValid = true;
@@ -70,7 +71,12 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (result.isSuccess && result.user != null) {
-        // Show success message
+        UserProfile.instance.clear();
+
+        final localStorage = LocalStorageService();
+        await localStorage.saveUserInfo(result.user!.email ?? '');
+        print('Saved user info (signup): ${result.user!.email}');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -83,16 +89,14 @@ class _SignupPageState extends State<SignupPage> {
           );
         }
 
-        // Navigate to home page after successful signup
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            AppRoutes.profile,
+            AppRoutes.main,
             (route) => false,
           );
         }
       } else {
-        // Show error message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -104,7 +108,6 @@ class _SignupPageState extends State<SignupPage> {
         }
       }
     } catch (e) {
-      // Show generic error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -124,7 +127,6 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   bool _isValidEmailFormat(String email) {
-    // Comprehensive email validation regex
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
@@ -151,7 +153,6 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar to light mode for white text
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     return Scaffold(
@@ -217,7 +218,7 @@ class _SignupPageState extends State<SignupPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 16),
-                    // Neumorphic email/username field
+
                     const Text(
                       'Username or Email',
                       style: TextStyle(
@@ -230,25 +231,27 @@ class _SignupPageState extends State<SignupPage> {
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: _isEmailValid || _emailController.text.isEmpty
-                              ? [
-                                  const Color(0xFFE8EAFE),
-                                  const Color(0xFFD6E0FF),
-                                ]
-                              : [
-                                  const Color(0xFFFFE8E8),
-                                  const Color(0xFFFFD6D6),
-                                ],
+                          colors:
+                              _isEmailValid || _emailController.text.isEmpty
+                                  ? [
+                                    const Color(0xFFE8EAFE),
+                                    const Color(0xFFD6E0FF),
+                                  ]
+                                  : [
+                                    const Color(0xFFFFE8E8),
+                                    const Color(0xFFFFD6D6),
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: _isEmailValid || _emailController.text.isEmpty
-                            ? null
-                            : Border.all(
-                                color: Colors.red.withOpacity(0.6),
-                                width: 2,
-                              ),
+                        border:
+                            _isEmailValid || _emailController.text.isEmpty
+                                ? null
+                                : Border.all(
+                                  color: Colors.red.withOpacity(0.6),
+                                  width: 2,
+                                ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withOpacity(0.8),
@@ -259,13 +262,13 @@ class _SignupPageState extends State<SignupPage> {
                           BoxShadow(
                             color:
                                 _isEmailValid || _emailController.text.isEmpty
-                                ? Color.fromARGB(
-                                    255,
-                                    5,
-                                    5,
-                                    167,
-                                  ).withOpacity(0.4)
-                                : Colors.red.withOpacity(0.3),
+                                    ? Color.fromARGB(
+                                      255,
+                                      5,
+                                      5,
+                                      167,
+                                    ).withOpacity(0.4)
+                                    : Colors.red.withOpacity(0.3),
                             offset: const Offset(4, 4),
                             blurRadius: 12,
                             spreadRadius: 1,
@@ -289,16 +292,16 @@ class _SignupPageState extends State<SignupPage> {
                             fontSize: 16,
                             color:
                                 _isEmailValid || _emailController.text.isEmpty
-                                ? Colors.black87
-                                : Colors.red.shade700,
+                                    ? Colors.black87
+                                    : Colors.red.shade700,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Enter your email or username',
                             hintStyle: TextStyle(
                               color:
                                   _isEmailValid || _emailController.text.isEmpty
-                                  ? Colors.grey.shade500
-                                  : Colors.red.shade300,
+                                      ? Colors.grey.shade500
+                                      : Colors.red.shade300,
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
@@ -307,22 +310,24 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             fillColor: Colors.transparent,
                             filled: true,
-                            suffixIcon: _emailController.text.isNotEmpty
-                                ? Icon(
-                                    _isEmailValid
-                                        ? Icons.check_circle
-                                        : Icons.error,
-                                    color: _isEmailValid
-                                        ? Colors.green
-                                        : Colors.red,
-                                    size: 20,
-                                  )
-                                : null,
+                            suffixIcon:
+                                _emailController.text.isNotEmpty
+                                    ? Icon(
+                                      _isEmailValid
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color:
+                                          _isEmailValid
+                                              ? Colors.green
+                                              : Colors.red,
+                                      size: 20,
+                                    )
+                                    : null,
                           ),
                         ),
                       ),
                     ),
-                    // Email error message
+
                     if (_emailError.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Padding(
@@ -350,7 +355,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ],
                     const SizedBox(height: 22),
-                    // Neumorphic password field
+
                     const Text(
                       'Password',
                       style: TextStyle(
@@ -428,7 +433,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    // Neumorphic confirm password field
+
                     const Text(
                       'Confirm Password',
                       style: TextStyle(
@@ -510,23 +515,25 @@ class _SignupPageState extends State<SignupPage> {
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isButtonEnabled && !_isLoading
-                            ? _handleSignUp
-                            : null,
+                        onTap:
+                            _isButtonEnabled && !_isLoading
+                                ? _handleSignUp
+                                : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.ease,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _isButtonEnabled && !_isLoading
-                                  ? [
-                                      const Color.fromARGB(255, 1, 25, 59),
-                                      const Color.fromARGB(255, 1, 29, 48),
-                                    ]
-                                  : [
-                                      Colors.grey.shade400,
-                                      Colors.grey.shade500,
-                                    ],
+                              colors:
+                                  _isButtonEnabled && !_isLoading
+                                      ? [
+                                        const Color.fromARGB(255, 1, 25, 59),
+                                        const Color.fromARGB(255, 1, 29, 48),
+                                      ]
+                                      : [
+                                        Colors.grey.shade400,
+                                        Colors.grey.shade500,
+                                      ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -571,7 +578,6 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 30),
 
-                    // Divider with "OR" text
                     Row(
                       children: [
                         Expanded(
@@ -602,78 +608,83 @@ class _SignupPageState extends State<SignupPage> {
 
                     const SizedBox(height: 30),
 
-                    // Google Sign-Up Button
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () async {
-                                setState(() {
-                                  _isLoading = true;
-                                });
+                        onTap:
+                            _isLoading
+                                ? null
+                                : () async {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
 
-                                try {
-                                  final googleAuthService = GoogleAuthService();
-                                  final result = await googleAuthService
-                                      .signInWithGoogle();
+                                  try {
+                                    final googleAuthService =
+                                        GoogleAuthService();
+                                    final result =
+                                        await googleAuthService
+                                            .signInWithGoogle();
 
-                                  if (result != null && result.user != null) {
-                                    // Successfully signed up with Google
+                                    if (result != null && result.user != null) {
+                                      UserProfile.instance.clear();
+
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Welcome ${result.user!.displayName ?? result.user!.email}!',
+                                            ),
+                                            backgroundColor: Colors.green,
+                                            duration: const Duration(
+                                              seconds: 2,
+                                            ),
+                                          ),
+                                        );
+
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          AppRoutes.main,
+                                          (route) => false,
+                                        );
+                                      }
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Google Sign-Up failed. Please try again.',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
                                     if (mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            'Welcome ${result.user!.displayName ?? result.user!.email}!',
+                                            'Google Sign-Up not available. Please configure Firebase first.',
                                           ),
-                                          backgroundColor: Colors.green,
-                                          duration: const Duration(seconds: 2),
+                                          backgroundColor: Colors.orange,
                                         ),
                                       );
-
-                                      Navigator.pushNamedAndRemoveUntil(
-                                        context,
-                                        AppRoutes.profile,
-                                        (route) => false,
-                                      );
                                     }
-                                  } else {
-                                    // Handle sign-up failure
+                                  } finally {
                                     if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Google Sign-Up failed. Please try again.',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
                                     }
                                   }
-                                } catch (e) {
-                                  // Handle Firebase/Google Sign-In errors
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Google Sign-Up not available. Please configure Firebase first.',
-                                        ),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setState(() {
-                                      _isLoading = false;
-                                    });
-                                  }
-                                }
-                              },
+                                },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
@@ -706,7 +717,6 @@ class _SignupPageState extends State<SignupPage> {
                                   ),
                                 )
                               else ...[
-                                // Google Icon
                                 Container(
                                   width: 24,
                                   height: 24,
@@ -714,7 +724,7 @@ class _SignupPageState extends State<SignupPage> {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Image.asset(
-                                    'assert/google_logo.png',
+                                    'assets/google_logo.png',
                                     width: 24,
                                     height: 24,
                                     fit: BoxFit.contain,

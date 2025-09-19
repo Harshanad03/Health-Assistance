@@ -23,7 +23,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Initialize animation controllers
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -39,7 +38,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    // Define animations
     _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
@@ -58,29 +56,22 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
 
-    // Start animations
     _startAnimations();
   }
 
   void _startAnimations() async {
-    // Start logo animation
     await _logoController.forward();
 
-    // Start text animation
     await _textController.forward();
 
-    // Start fade animation
     await _fadeController.forward();
 
-    // Wait for animations to complete then navigate
     _navigateAfterDelay();
   }
 
   void _navigateAfterDelay() async {
-    // Wait for 3.5 seconds total (matching the original timing)
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Navigate to next screen with perfect transition using SplashManager
     if (mounted) {
       SplashManager.navigateToSecondSplash(context);
     }
@@ -96,7 +87,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar to light mode for white text
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     final size = MediaQuery.of(context).size;
@@ -107,11 +97,9 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
       backgroundColor: const Color.fromARGB(255, 215, 223, 247),
       body: Column(
         children: [
-          // Top section: Stack with wavy blue gradient and logo
           Stack(
             clipBehavior: Clip.none,
             children: [
-              // Wavy blue gradient background
               SizedBox(
                 width: size.width,
                 height: curveHeight,
@@ -131,7 +119,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-              // Floating logo/avatar with animations
+
               Positioned(
                 left: 0,
                 right: 0,
@@ -176,10 +164,34 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                                   end: Alignment.bottomRight,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.health_and_safety,
-                                size: 44,
-                                color: Colors.white,
+                              child: ClipOval(
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      'assets/logo.jpg',
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        return const Icon(
+                                          Icons.health_and_safety,
+                                          size: 40,
+                                          color: Color.fromARGB(255, 1, 25, 59),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -191,10 +203,9 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          // Spacer to account for logo overlap
+
           SizedBox(height: logoSize / 2 + 36),
 
-          // App name and subtitle with slide animation
           AnimatedBuilder(
             animation: _textController,
             builder: (context, child) {
@@ -205,7 +216,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   child: Column(
                     children: [
                       const Text(
-                        'Health Assistant',
+                        'AUVI',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -216,7 +227,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 18),
                       const Text(
-                        'A platform built for a new way of health',
+                        'Advanced Health Monitoring & Analysis',
                         style: TextStyle(
                           fontSize: 17,
                           color: Color(0xFF6B7A90),
@@ -233,7 +244,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
           const Expanded(child: SizedBox()),
 
-          // Loading section with fade animation
           AnimatedBuilder(
             animation: _fadeController,
             builder: (context, child) {

@@ -1,5 +1,5 @@
-name: project
-description: "A new Flutter project."
+name: auvi
+description: "AUVI - Advanced Health Monitoring Application"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.7.2
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -53,6 +53,11 @@ dependencies:
   
   # Flash functionality
   torch_light: ^1.0.0
+  shared_preferences: ^2.5.3
+  cloud_firestore: ^4.17.5
+  
+  # Native continuous vibration like phone calls
+  vibration: ^3.1.3
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +69,23 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  
+  # App icon generator
+  flutter_launcher_icons: ^0.13.1
+
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  macos:
+    generate: true
+  image_path: "assets/logo.jpg"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/logo.jpg"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -78,13 +100,14 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assert/splash1.png
-    - assert/splash2.png
-    - assert/module1.png
-    - assert/module2.png
-    - assert/profile_female.jpg
-    - assert/profile_male.jpg
-    - assert/google_logo.png
+    - assets/logo.jpg
+    - assets/splash1.png
+    - assets/splash2.png
+    - assets/module1.png
+    - assets/module2.png
+    - assets/profile_female.jpg
+    - assets/profile_male.jpg
+    - assets/google_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -5,7 +5,6 @@ class HealthDataService {
 
   static HealthDataService get instance => _instance;
 
-  // Health data based on age ranges
   final Map<String, Map<String, dynamic>> _healthData = {
     '29-30': {
       'heartRate': {'min': 64, 'max': 90},
@@ -39,7 +38,6 @@ class HealthDataService {
     },
   };
 
-  /// Calculate age from date of birth
   int calculateAge(String dob) {
     if (dob.isEmpty) {
       return 0; // Return 0 for empty DOB
@@ -62,7 +60,6 @@ class HealthDataService {
     }
   }
 
-  /// Get age range key for health data lookup
   String _getAgeRange(int age) {
     if (age >= 29 && age <= 30) return '29-30';
     if (age >= 31 && age <= 35) return '31-35';
@@ -73,7 +70,6 @@ class HealthDataService {
     return '29-30'; // Default range
   }
 
-  /// Get expected blood pressure range based on age
   Map<String, int> getExpectedBloodPressure(int age) {
     final ageRange = _getAgeRange(age);
     final data = _healthData[ageRange]!;
@@ -86,7 +82,6 @@ class HealthDataService {
     };
   }
 
-  /// Get expected heart rate range based on age
   Map<String, int> getExpectedHeartRate(int age) {
     final ageRange = _getAgeRange(age);
     final data = _healthData[ageRange]!;
@@ -94,19 +89,16 @@ class HealthDataService {
     return {'min': data['heartRate']['min'], 'max': data['heartRate']['max']};
   }
 
-  /// Get formatted blood pressure range string
   String getFormattedBloodPressureRange(int age) {
     final bp = getExpectedBloodPressure(age);
     return '${bp['systolicMin']}-${bp['systolicMax']}/${bp['diastolicMin']}-${bp['diastolicMax']}';
   }
 
-  /// Get formatted heart rate range string
   String getFormattedHeartRateRange(int age) {
     final hr = getExpectedHeartRate(age);
     return '${hr['min']}-${hr['max']} BPM';
   }
 
-  /// Check if current readings are within normal range
   Map<String, bool> checkHealthStatus(
     int age,
     int? heartRate,

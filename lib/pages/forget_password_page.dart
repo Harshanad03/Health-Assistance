@@ -30,7 +30,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         _isEmailValid = true;
         _emailError = '';
       } else {
-        // Simple but effective email validation
         final trimmedEmail = email.trim();
         if (_isValidEmailFormat(trimmedEmail)) {
           _isEmailValid = true;
@@ -45,7 +44,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
   }
 
   bool _isValidEmailFormat(String email) {
-    // Comprehensive email validation regex
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
@@ -60,7 +58,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     });
 
     try {
-      // Add debug logging
       print('Sending password reset email to: ${_emailController.text.trim()}');
 
       final result = await _firebaseAuthService.sendPasswordResetEmail(
@@ -70,12 +67,10 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       print('Password reset result: ${result.isSuccess} - ${result.message}');
 
       if (result.isSuccess) {
-        // Show success message
         if (mounted) {
           _showSuccessDialog();
         }
       } else {
-        // Show error message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -87,7 +82,6 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         }
       }
     } catch (e) {
-      // Show generic error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -380,7 +374,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                         ),
                       ),
                     ),
-                    // Email error message
+
                     if (_emailError.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Padding(
@@ -411,25 +405,27 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isButtonEnabled && !_isLoading
-                            ? () {
-                                _sendPasswordResetEmail();
-                              }
-                            : null,
+                        onTap:
+                            _isButtonEnabled && !_isLoading
+                                ? () {
+                                  _sendPasswordResetEmail();
+                                }
+                                : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.ease,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _isButtonEnabled && !_isLoading
-                                  ? const [
-                                      Color.fromARGB(255, 1, 25, 59),
-                                      Color.fromARGB(255, 1, 29, 48),
-                                    ]
-                                  : const [
-                                      Color.fromARGB(255, 150, 150, 150),
-                                      Color.fromARGB(255, 120, 120, 120),
-                                    ],
+                              colors:
+                                  _isButtonEnabled && !_isLoading
+                                      ? const [
+                                        Color.fromARGB(255, 1, 25, 59),
+                                        Color.fromARGB(255, 1, 29, 48),
+                                      ]
+                                      : const [
+                                        Color.fromARGB(255, 150, 150, 150),
+                                        Color.fromARGB(255, 120, 120, 120),
+                                      ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -465,18 +461,20 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w600,
-                                    color: _isButtonEnabled
-                                        ? Colors.white
-                                        : Colors.white.withOpacity(0.7),
+                                    color:
+                                        _isButtonEnabled
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.7),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 22,
-                                  color: _isButtonEnabled
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.7),
+                                  color:
+                                      _isButtonEnabled
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.7),
                                 ),
                               ],
                             ],

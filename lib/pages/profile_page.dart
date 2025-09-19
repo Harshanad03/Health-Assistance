@@ -4,6 +4,7 @@ import 'edit_profile_page.dart';
 import '../utils/routes.dart';
 import '../widgets/modern_wavy_app_bar.dart';
 import '../models/user_profile.dart';
+import '../services/firestore_profile_service.dart';
 import '../services/health_data_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -15,27 +16,35 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   @override
+  void initState() {
+    super.initState();
+
+    FirestoreProfileService().getUserProfile().then((profile) {
+      setState(() {}); // Refresh UI after loading profile
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = UserProfile.instance;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 215, 223, 247),
       body: Column(
         children: [
-          // Fixed App Bar
           ModernWavyAppBar(
             height: 140,
             child: Center(
               child: Padding(padding: const EdgeInsets.only(top: 40.0)),
             ),
           ),
-          // Scrollable Content
+
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 32),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // Profile Container
+
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -69,33 +78,33 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Avatar
                         Container(
                           width: 120,
                           height: 120,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: const Color(0xFFD6E0FF),
-                            image: user.profilePicture != null
-                                ? DecorationImage(
-                                    image: FileImage(
-                                      File(user.profilePicture!),
+                            image:
+                                user.profilePicture != null
+                                    ? DecorationImage(
+                                      image: FileImage(
+                                        File(user.profilePicture!),
+                                      ),
+                                      fit: BoxFit.cover,
+                                    )
+                                    : (user.sex?.toLowerCase() == 'male')
+                                    ? const DecorationImage(
+                                      image: AssetImage(
+                                        'assets/profile_male.jpg',
+                                      ),
+                                      fit: BoxFit.cover,
+                                    )
+                                    : const DecorationImage(
+                                      image: AssetImage(
+                                        'assets/profile_female.jpg',
+                                      ),
+                                      fit: BoxFit.cover,
                                     ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : (user.sex?.toLowerCase() == 'male')
-                                ? const DecorationImage(
-                                    image: AssetImage(
-                                      'assert/profile_male.jpg',
-                                    ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : const DecorationImage(
-                                    image: AssetImage(
-                                      'assert/profile_female.jpg',
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.08),
@@ -149,7 +158,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         _profileDetailRow(Icons.pin, 'Pincode', user.pincode),
                         const SizedBox(height: 24),
 
-                        // Profile Completion Notice - Only show if profile is incomplete
                         if (user.name.isEmpty ||
                             user.dob.isEmpty ||
                             user.age.isEmpty) ...[
@@ -192,7 +200,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           const SizedBox(height: 20),
                         ],
 
-                        // Health Information Section
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -207,7 +214,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 12),
                         _buildHealthInfoCard(user),
                         const SizedBox(height: 24),
-                        // Edit Button
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -255,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Logout Button
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -337,11 +344,7 @@ class _ProfilePageState extends State<ProfilePage> {
             if (index == 0) {
               Navigator.pushReplacementNamed(context, AppRoutes.home);
             } else if (index == 1) {
-              // Already on profile
-            } else if (index == 2) {
-              // If you have a Document page, navigate to it
-              // Navigator.pushReplacementNamed(context, AppRoutes.documents);
-            }
+            } else if (index == 2) {}
           },
           items: [
             BottomNavigationBarItem(
@@ -423,8 +426,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout() {
-    // TODO: Implement logout logic
-    // Clear user data, navigate to login page, etc.
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
@@ -492,12 +493,13 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: selected ? const Color(0xFFE8EAFE) : const Color(0xFFD6E0FF),
-        border: selected
-            ? Border.all(
-                color: const Color.fromARGB(255, 44, 66, 113),
-                width: 2,
-              )
-            : null,
+        border:
+            selected
+                ? Border.all(
+                  color: const Color.fromARGB(255, 44, 66, 113),
+                  width: 2,
+                )
+                : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -509,9 +511,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Icon(
         icon,
-        color: selected
-            ? const Color.fromARGB(255, 44, 66, 113)
-            : Colors.black38,
+        color:
+            selected ? const Color.fromARGB(255, 44, 66, 113) : Colors.black38,
         size: 20,
       ),
     );
@@ -549,7 +550,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: [
-          // Blood Pressure Range
           Row(
             children: [
               Container(
@@ -621,7 +621,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          // Heart Rate Range
+
           Row(
             children: [
               Container(
@@ -693,7 +693,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 12),
-          // Age Information
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(

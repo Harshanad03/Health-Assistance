@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:heart_bpm/heart_bpm.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:torch_light/torch_light.dart';
+import 'package:vibration/vibration.dart';
 import '../widgets/modern_wavy_app_bar.dart';
 import '../utils/routes.dart';
 import '../services/health_data_service.dart';
 import '../models/user_profile.dart';
+import '../services/measurement_history_service.dart';
+import '../services/health_prediction_service.dart';
 
 class BPMeasurementPage extends StatefulWidget {
   const BPMeasurementPage({super.key});
@@ -21,26 +24,232 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
   int? finalBpm;
   bool isMeasuring = false;
   Timer? timer;
+  Timer? vibrationTimer;
   int secondsLeft = 30;
   List<int> bpmValues = [];
   String statusMessage = 'Ready to measure your blood pressure';
   int? calculatedSystolic;
   int? calculatedDiastolic;
+  bool hasVibration = false;
 
   @override
   void initState() {
     super.initState();
     _checkProfileCompletion();
+    _checkVibrationCapability();
   }
 
   void _checkProfileCompletion() {
     final user = UserProfile.instance;
-    // Check if essential profile fields are filled
+
     if (user.name.isEmpty || user.dob.isEmpty || user.age.isEmpty) {
-      // Redirect to profile page if profile is incomplete
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, AppRoutes.profile);
+        _showProfileCompletionDialog();
       });
+    }
+  }
+
+  void _showProfileCompletionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must make a choice
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color.fromARGB(255, 255, 193, 7),
+                      Color.fromARGB(255, 255, 165, 0),
+                    ],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.person_add,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Complete Your Profile',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 44, 66, 113),
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'To use AUVI\'s blood pressure monitoring, please complete your profile first.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 255, 248, 220),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: const Color.fromARGB(
+                      255,
+                      255,
+                      193,
+                      7,
+                    ).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Color.fromARGB(255, 255, 193, 7),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Required Information:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 184, 134, 11),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• Full Name\n• Date of Birth\n• Age\n\nYour age is essential for accurate blood pressure analysis.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color.fromARGB(255, 134, 107, 48),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, AppRoutes.main);
+              },
+              child: const Text(
+                'Maybe Later',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 108, 117, 125),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, AppRoutes.mainProfile);
+              },
+              icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+              label: const Text(
+                'Complete Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 1, 25, 59),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _checkVibrationCapability() async {
+    try {
+      hasVibration = await Vibration.hasVibrator() ?? false;
+      print('BPMeasurementPage: Native vibration available: $hasVibration');
+    } catch (e) {
+      print('BPMeasurementPage: Error checking vibration capability: $e');
+      hasVibration = false;
+    }
+  }
+
+  void _startVibrationFeedback() {
+    if (!hasVibration) return;
+
+    try {
+      _startContinuousVibration();
+
+      print('BPMeasurementPage: Started continuous vibration');
+    } catch (e) {
+      print('BPMeasurementPage: Error starting vibration: $e');
+    }
+  }
+
+  void _startContinuousVibration() {
+    if (!hasVibration || !isMeasuring) return;
+
+    try {
+      Vibration.vibrate(duration: 1000);
+
+      vibrationTimer = Timer.periodic(const Duration(milliseconds: 900), (
+        timer,
+      ) {
+        if (isMeasuring && hasVibration) {
+          Vibration.vibrate(duration: 1000); // 100ms overlap to prevent gaps
+        } else {
+          timer.cancel();
+        }
+      });
+    } catch (e) {
+      print('BPMeasurementPage: Error in continuous vibration: $e');
+    }
+  }
+
+  void _stopVibrationFeedback() {
+    try {
+      vibrationTimer?.cancel();
+      vibrationTimer = null;
+
+      Vibration.cancel();
+
+      print('BPMeasurementPage: Stopped continuous native vibration');
+    } catch (e) {
+      print('BPMeasurementPage: Error stopping vibration: $e');
     }
   }
 
@@ -68,7 +277,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
       return;
     }
 
-    // Turn on flash
     try {
       await TorchLight.enableTorch();
     } catch (e) {
@@ -80,8 +288,12 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
       secondsLeft = 30;
       bpmValues.clear();
       finalBpm = null;
-      statusMessage = 'Place your finger over camera and flash. Keep still!';
+      statusMessage =
+          'Place your finger over camera and flash. Keep still!' +
+          (hasVibration ? ' (Native vibration active)' : '');
     });
+
+    _startVibrationFeedback();
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       setState(() {
@@ -96,7 +308,8 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
   void stopMeasurement() async {
     timer?.cancel();
 
-    // Turn off flash
+    _stopVibrationFeedback();
+
     try {
       await TorchLight.disableTorch();
     } catch (e) {
@@ -106,14 +319,15 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
     setState(() {
       isMeasuring = false;
       if (bpmValues.isNotEmpty) {
-        finalBpm = (bpmValues.reduce((a, b) => a + b) / bpmValues.length)
-            .round();
+        finalBpm =
+            (bpmValues.reduce((a, b) => a + b) / bpmValues.length).round();
 
-        // Calculate BP values based on age and heart rate
         _calculateBloodPressure();
 
         statusMessage =
             'Measurement complete! Your average heart rate: $finalBpm BPM';
+
+        _saveMeasurementToHistory();
       } else {
         statusMessage = 'No valid readings. Please try again.';
       }
@@ -126,52 +340,129 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
     final age = healthService.calculateAge(user.dob);
 
     if (finalBpm != null && age > 0) {
-      // Calculate systolic and diastolic based on age and heart rate
-      // Using the data from your table, we'll estimate BP values
       calculatedSystolic = _estimateSystolic(age, finalBpm!);
       calculatedDiastolic = _estimateDiastolic(age, finalBpm!);
     } else {
-      // If age is 0 (invalid DOB), use default values
       calculatedSystolic = 120;
       calculatedDiastolic = 80;
     }
   }
 
   int _estimateSystolic(int age, int heartRate) {
-    // Base systolic calculation based on age and heart rate
-    // Using patterns from your data table
     double baseSystolic = 120.0;
 
-    // Age factor (systolic tends to increase with age)
     double ageFactor = (age - 30) * 0.8;
 
-    // Heart rate factor (higher HR often correlates with higher systolic)
     double hrFactor = (heartRate - 70) * 0.3;
 
     int systolic = (baseSystolic + ageFactor + hrFactor).round();
 
-    // Keep within reasonable bounds based on your data
     return systolic.clamp(100, 170);
   }
 
   int _estimateDiastolic(int age, int heartRate) {
-    // Base diastolic calculation
     double baseDiastolic = 80.0;
 
-    // Age factor (diastolic also increases with age but less than systolic)
     double ageFactor = (age - 30) * 0.4;
 
-    // Heart rate factor (moderate correlation)
     double hrFactor = (heartRate - 70) * 0.2;
 
     int diastolic = (baseDiastolic + ageFactor + hrFactor).round();
 
-    // Keep within reasonable bounds based on your data
     return diastolic.clamp(60, 100);
   }
 
+  double _calculateAccuracy(Map<String, dynamic> predictedBP) {
+    if (calculatedSystolic == null || calculatedDiastolic == null) return 0.0;
+
+    int predictedSys = predictedBP['systolic'];
+    int predictedDia = predictedBP['diastolic'];
+
+    double sysAccuracy =
+        1.0 -
+        ((calculatedSystolic! - predictedSys).abs() / calculatedSystolic!);
+    double diaAccuracy =
+        1.0 -
+        ((calculatedDiastolic! - predictedDia).abs() / calculatedDiastolic!);
+
+    return ((sysAccuracy + diaAccuracy) / 2).clamp(0.0, 1.0);
+  }
+
+  void _saveMeasurementToHistory() async {
+    if (finalBpm == null ||
+        calculatedSystolic == null ||
+        calculatedDiastolic == null)
+      return;
+
+    try {
+      final user = UserProfile.instance;
+      final healthService = HealthDataService.instance;
+      final historyService = MeasurementHistoryService.instance;
+
+      final age = healthService.calculateAge(user.dob);
+      final healthStatus = healthService.checkHealthStatus(
+        age > 0 ? age : 30, // Use default age if calculation fails
+        finalBpm,
+        calculatedSystolic,
+        calculatedDiastolic,
+      );
+
+      final predictionService = HealthPredictionService.instance;
+      final predictedBP = predictionService.predictBloodPressure(
+        age > 0 ? age : 30,
+        finalBpm!,
+      );
+
+      final success = await historyService.saveBloodPressureMeasurement(
+        systolic: calculatedSystolic!,
+        diastolic: calculatedDiastolic!,
+        heartRate: finalBpm,
+        age: age > 0 ? age : null,
+        isNormal: healthStatus['bloodPressureNormal'],
+        additionalMetadata: {
+          'measurementDuration': 30,
+          'sampleCount': bpmValues.length,
+          'rawValues': bpmValues.take(10).toList(), // Store first 10 raw values
+          'estimationMethod': 'age_hr_based',
+          'datasetPrediction': predictedBP['prediction'],
+          'datasetStatus': predictedBP['status'],
+          'predictionAccuracy': _calculateAccuracy(predictedBP),
+        },
+      );
+
+      if (success) {
+        print('Blood pressure measurement saved successfully');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Measurement saved to history'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        print('Failed to save blood pressure measurement');
+      }
+    } catch (e) {
+      print('Error saving blood pressure measurement: $e');
+    }
+  }
+
   void resetMeasurement() async {
-    // Turn off flash if it's on
+    vibrationTimer?.cancel();
+    vibrationTimer = null;
+    try {
+      Vibration.cancel();
+    } catch (e) {
+      print('Error stopping vibration: $e');
+    }
+
     try {
       await TorchLight.disableTorch();
     } catch (e) {
@@ -196,7 +487,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
     final healthService = HealthDataService.instance;
     final age = healthService.calculateAge(user.dob);
 
-    // Use default age if calculation failed
     final validAge = age > 0 ? age : 30;
 
     final status = healthService.checkHealthStatus(
@@ -265,23 +555,20 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
           ),
           const SizedBox(height: 16),
 
-          // Heart Rate Status
           Row(
             children: [
               Icon(
                 status['heartRateNormal']! ? Icons.check_circle : Icons.warning,
-                color: status['heartRateNormal']!
-                    ? Colors.green
-                    : Colors.orange,
+                color:
+                    status['heartRateNormal']! ? Colors.green : Colors.orange,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 'Heart Rate: ${status['heartRateNormal']! ? 'Normal' : 'Outside normal range'}',
                 style: TextStyle(
-                  color: status['heartRateNormal']!
-                      ? Colors.green
-                      : Colors.orange,
+                  color:
+                      status['heartRateNormal']! ? Colors.green : Colors.orange,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -291,25 +578,26 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
           const SizedBox(height: 8),
 
-          // Blood Pressure Status
           Row(
             children: [
               Icon(
                 status['systolicNormal']! && status['diastolicNormal']!
                     ? Icons.check_circle
                     : Icons.warning,
-                color: status['systolicNormal']! && status['diastolicNormal']!
-                    ? Colors.green
-                    : Colors.orange,
+                color:
+                    status['systolicNormal']! && status['diastolicNormal']!
+                        ? Colors.green
+                        : Colors.orange,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 'Blood Pressure: ${status['systolicNormal']! && status['diastolicNormal']! ? 'Normal' : 'Outside normal range'}',
                 style: TextStyle(
-                  color: status['systolicNormal']! && status['diastolicNormal']!
-                      ? Colors.green
-                      : Colors.orange,
+                  color:
+                      status['systolicNormal']! && status['diastolicNormal']!
+                          ? Colors.green
+                          : Colors.orange,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -319,7 +607,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
           const SizedBox(height: 12),
 
-          // Expected Ranges
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -410,6 +697,8 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
   @override
   void dispose() {
     timer?.cancel();
+    vibrationTimer?.cancel();
+    Vibration.cancel();
     super.dispose();
   }
 
@@ -419,14 +708,13 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
       backgroundColor: const Color.fromARGB(255, 215, 223, 247),
       body: Column(
         children: [
-          // Modern Wavy App Bar
           ModernWavyAppBar(
             height: 140,
-            onBack: () =>
-                Navigator.pushReplacementNamed(context, AppRoutes.home),
+            onBack:
+                () => Navigator.pushReplacementNamed(context, AppRoutes.main),
             child: Center(
               child: Text(
-                'Blood Pressure Monitor',
+                'AUVI Blood Pressure Monitor',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -436,7 +724,7 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
               ),
             ),
           ),
-          // Scrollable Content
+
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -444,19 +732,22 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Status Message Card with Animation
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: isMeasuring
-                            ? [const Color(0xFFFFE8E8), const Color(0xFFFFD6D6)]
-                            : [
-                                const Color(0xFFE8EAFE),
-                                const Color(0xFFD6E0FF),
-                              ],
+                        colors:
+                            isMeasuring
+                                ? [
+                                  const Color(0xFFFFE8E8),
+                                  const Color(0xFFFFD6D6),
+                                ]
+                                : [
+                                  const Color(0xFFE8EAFE),
+                                  const Color(0xFFD6E0FF),
+                                ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -469,19 +760,20 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                           spreadRadius: 1,
                         ),
                         BoxShadow(
-                          color: isMeasuring
-                              ? const Color.fromARGB(
-                                  255,
-                                  220,
-                                  53,
-                                  69,
-                                ).withOpacity(0.15)
-                              : const Color.fromARGB(
-                                  255,
-                                  5,
-                                  5,
-                                  167,
-                                ).withOpacity(0.12),
+                          color:
+                              isMeasuring
+                                  ? const Color.fromARGB(
+                                    255,
+                                    220,
+                                    53,
+                                    69,
+                                  ).withOpacity(0.15)
+                                  : const Color.fromARGB(
+                                    255,
+                                    5,
+                                    5,
+                                    167,
+                                  ).withOpacity(0.12),
                           offset: const Offset(6, 6),
                           blurRadius: 20,
                           spreadRadius: 1,
@@ -519,9 +811,10 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
-                              color: isMeasuring
-                                  ? const Color.fromARGB(255, 220, 53, 69)
-                                  : const Color.fromARGB(255, 44, 66, 113),
+                              color:
+                                  isMeasuring
+                                      ? const Color.fromARGB(255, 220, 53, 69)
+                                      : const Color.fromARGB(255, 44, 66, 113),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -532,19 +825,22 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 40),
 
-                  // Heart Icon and BPM Display Card with Enhanced Animation
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 500),
                     width: 340,
                     height: 340,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: isMeasuring
-                            ? [const Color(0xFFFFE8E8), const Color(0xFFFFD6D6)]
-                            : [
-                                const Color(0xFFE8EAFE),
-                                const Color(0xFFD6E0FF),
-                              ],
+                        colors:
+                            isMeasuring
+                                ? [
+                                  const Color(0xFFFFE8E8),
+                                  const Color(0xFFFFD6D6),
+                                ]
+                                : [
+                                  const Color(0xFFE8EAFE),
+                                  const Color(0xFFD6E0FF),
+                                ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -557,19 +853,20 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                           spreadRadius: 2,
                         ),
                         BoxShadow(
-                          color: isMeasuring
-                              ? const Color.fromARGB(
-                                  255,
-                                  220,
-                                  53,
-                                  69,
-                                ).withOpacity(0.2)
-                              : const Color.fromARGB(
-                                  255,
-                                  5,
-                                  5,
-                                  167,
-                                ).withOpacity(0.15),
+                          color:
+                              isMeasuring
+                                  ? const Color.fromARGB(
+                                    255,
+                                    220,
+                                    53,
+                                    69,
+                                  ).withOpacity(0.2)
+                                  : const Color.fromARGB(
+                                    255,
+                                    5,
+                                    5,
+                                    167,
+                                  ).withOpacity(0.15),
                           offset: const Offset(8, 8),
                           blurRadius: 25,
                           spreadRadius: 2,
@@ -579,28 +876,28 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Animated Heart Icon
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           child: Icon(
                             Icons.favorite,
                             size: isMeasuring ? 70 : 60,
-                            color: isMeasuring
-                                ? const Color.fromARGB(255, 220, 53, 69)
-                                : Colors.red,
+                            color:
+                                isMeasuring
+                                    ? const Color.fromARGB(255, 220, 53, 69)
+                                    : Colors.red,
                           ),
                         ),
                         const SizedBox(height: 16),
 
-                        // BPM Display with Animation
                         AnimatedDefaultTextStyle(
                           duration: const Duration(milliseconds: 300),
                           style: TextStyle(
                             fontSize: isMeasuring ? 32 : 28,
                             fontWeight: FontWeight.bold,
-                            color: isMeasuring
-                                ? const Color.fromARGB(255, 220, 53, 69)
-                                : const Color.fromARGB(255, 44, 66, 113),
+                            color:
+                                isMeasuring
+                                    ? const Color.fromARGB(255, 220, 53, 69)
+                                    : const Color.fromARGB(255, 44, 66, 113),
                           ),
                           child: Text(
                             isMeasuring
@@ -618,7 +915,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                           ),
                         ),
 
-                        // Blood Pressure Display with Enhanced Styling
                         if (calculatedSystolic != null &&
                             calculatedDiastolic != null) ...[
                           const SizedBox(height: 20),
@@ -798,7 +1094,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                     ),
                   ),
 
-                  // Health Status Comparison
                   if (calculatedSystolic != null &&
                       calculatedDiastolic != null) ...[
                     const SizedBox(height: 20),
@@ -807,7 +1102,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 40),
 
-                  // Enhanced Timer Display with Animation
                   if (isMeasuring)
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
@@ -817,15 +1111,16 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                       ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: secondsLeft <= 10
-                              ? [
-                                  const Color(0xFFFFE8E8),
-                                  const Color(0xFFFFD6D6),
-                                ]
-                              : [
-                                  const Color(0xFFE8EAFE),
-                                  const Color(0xFFD6E0FF),
-                                ],
+                          colors:
+                              secondsLeft <= 10
+                                  ? [
+                                    const Color(0xFFFFE8E8),
+                                    const Color(0xFFFFD6D6),
+                                  ]
+                                  : [
+                                    const Color(0xFFE8EAFE),
+                                    const Color(0xFFD6E0FF),
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -838,19 +1133,20 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                             spreadRadius: 1,
                           ),
                           BoxShadow(
-                            color: secondsLeft <= 10
-                                ? const Color.fromARGB(
-                                    255,
-                                    220,
-                                    53,
-                                    69,
-                                  ).withOpacity(0.15)
-                                : const Color.fromARGB(
-                                    255,
-                                    5,
-                                    5,
-                                    167,
-                                  ).withOpacity(0.10),
+                            color:
+                                secondsLeft <= 10
+                                    ? const Color.fromARGB(
+                                      255,
+                                      220,
+                                      53,
+                                      69,
+                                    ).withOpacity(0.15)
+                                    : const Color.fromARGB(
+                                      255,
+                                      5,
+                                      5,
+                                      167,
+                                    ).withOpacity(0.10),
                             offset: const Offset(3, 3),
                             blurRadius: 12,
                             spreadRadius: 1,
@@ -865,9 +1161,10 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                             child: Icon(
                               Icons.timer,
                               size: 22,
-                              color: secondsLeft <= 10
-                                  ? const Color.fromARGB(255, 220, 53, 69)
-                                  : const Color.fromARGB(255, 44, 66, 113),
+                              color:
+                                  secondsLeft <= 10
+                                      ? const Color.fromARGB(255, 220, 53, 69)
+                                      : const Color.fromARGB(255, 44, 66, 113),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -876,11 +1173,38 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: secondsLeft <= 10
-                                  ? const Color.fromARGB(255, 220, 53, 69)
-                                  : const Color.fromARGB(255, 44, 66, 113),
+                              color:
+                                  secondsLeft <= 10
+                                      ? const Color.fromARGB(255, 220, 53, 69)
+                                      : const Color.fromARGB(255, 44, 66, 113),
                             ),
-                            child: Text('${secondsLeft}s remaining'),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('${secondsLeft}s remaining'),
+                                if (hasVibration) ...[
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.vibration,
+                                    size: 14,
+                                    color:
+                                        secondsLeft <= 10
+                                            ? const Color.fromARGB(
+                                              255,
+                                              220,
+                                              53,
+                                              69,
+                                            )
+                                            : const Color.fromARGB(
+                                              255,
+                                              44,
+                                              66,
+                                              113,
+                                            ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -888,7 +1212,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 40),
 
-                  // Heart Rate Dialog (only when measuring)
                   if (isMeasuring)
                     HeartBPMDialog(
                       context: context,
@@ -911,17 +1234,14 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 40),
 
-                  // Enhanced Control Buttons with Animations
                   Column(
                     children: [
-                      // Main Action Button (Start/Stop) with Enhanced Styling
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: isMeasuring
-                              ? stopMeasurement
-                              : startMeasurement,
+                          onPressed:
+                              isMeasuring ? stopMeasurement : startMeasurement,
                           icon: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 200),
                             child: Icon(
@@ -949,24 +1269,23 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isMeasuring
-                                ? const Color.fromARGB(255, 220, 53, 69)
-                                : const Color.fromARGB(255, 1, 25, 59),
+                            backgroundColor:
+                                isMeasuring
+                                    ? const Color.fromARGB(255, 220, 53, 69)
+                                    : const Color.fromARGB(255, 1, 25, 59),
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(35),
                             ),
                             elevation: 6,
-                            shadowColor:
-                                (isMeasuring
-                                        ? const Color.fromARGB(255, 220, 53, 69)
-                                        : const Color.fromARGB(255, 1, 25, 59))
-                                    .withOpacity(0.4),
+                            shadowColor: (isMeasuring
+                                    ? const Color.fromARGB(255, 220, 53, 69)
+                                    : const Color.fromARGB(255, 1, 25, 59))
+                                .withOpacity(0.4),
                           ),
                         ),
                       ),
 
-                      // Reset Button (only when not measuring and has result)
                       if (!isMeasuring && finalBpm != null) ...[
                         const SizedBox(height: 20),
                         AnimatedContainer(
@@ -1015,7 +1334,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 30),
 
-                  // Enhanced Instructions Card
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -1137,7 +1455,6 @@ class _BPMeasurementPageState extends State<BPMeasurementPage> {
 
                   const SizedBox(height: 20),
 
-                  // Enhanced Disclaimer
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(

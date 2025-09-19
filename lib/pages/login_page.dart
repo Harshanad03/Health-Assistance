@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/routes.dart';
+import '../services/local_storage_service.dart';
 import '../widgets/modern_wavy_app_bar.dart';
 import '../services/google_auth_service.dart';
 import '../services/firebase_auth_service.dart';
+import '../models/user_profile.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -37,7 +39,6 @@ class _LoginPageState extends State<LoginPage> {
         _isEmailValid = true;
         _emailError = '';
       } else {
-        // Simple but effective email validation
         final trimmedEmail = email.trim();
         if (_isValidEmailFormat(trimmedEmail)) {
           _isEmailValid = true;
@@ -65,7 +66,11 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (result.isSuccess && result.user != null) {
-        // Show success message
+        UserProfile.instance.clear();
+
+        final localStorage = LocalStorageService();
+        await localStorage.saveUserInfo(result.user!.email ?? '');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -78,16 +83,14 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
 
-        // Navigate to home page after successful login
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            AppRoutes.profile,
+            AppRoutes.main,
             (route) => false,
           );
         }
       } else {
-        // Show error message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -99,7 +102,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     } catch (e) {
-      // Show generic error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -119,7 +121,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isValidEmailFormat(String email) {
-    // Comprehensive email validation regex
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
@@ -146,7 +147,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    // Set status bar to light mode for white text
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     return Scaffold(
@@ -160,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [const SizedBox(height: 48)],
             ),
           ),
-          // Welcome message above the form container
+
           Positioned(
             top: 170,
             left: 0,
@@ -180,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          // Main content area with rounded corners and shadow
+
           Align(
             alignment: Alignment.bottomCenter,
             child: SingleChildScrollView(
@@ -214,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 16),
-                    // Neumorphic email field
+
                     const Text(
                       'Your email address',
                       style: TextStyle(
@@ -227,25 +227,27 @@ class _LoginPageState extends State<LoginPage> {
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: _isEmailValid || _emailController.text.isEmpty
-                              ? [
-                                  const Color(0xFFE8EAFE),
-                                  const Color(0xFFD6E0FF),
-                                ]
-                              : [
-                                  const Color(0xFFFFE8E8),
-                                  const Color(0xFFFFD6D6),
-                                ],
+                          colors:
+                              _isEmailValid || _emailController.text.isEmpty
+                                  ? [
+                                    const Color(0xFFE8EAFE),
+                                    const Color(0xFFD6E0FF),
+                                  ]
+                                  : [
+                                    const Color(0xFFFFE8E8),
+                                    const Color(0xFFFFD6D6),
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: _isEmailValid || _emailController.text.isEmpty
-                            ? null
-                            : Border.all(
-                                color: Colors.red.withOpacity(0.6),
-                                width: 2,
-                              ),
+                        border:
+                            _isEmailValid || _emailController.text.isEmpty
+                                ? null
+                                : Border.all(
+                                  color: Colors.red.withOpacity(0.6),
+                                  width: 2,
+                                ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withOpacity(0.8),
@@ -256,13 +258,13 @@ class _LoginPageState extends State<LoginPage> {
                           BoxShadow(
                             color:
                                 _isEmailValid || _emailController.text.isEmpty
-                                ? Color.fromARGB(
-                                    255,
-                                    5,
-                                    5,
-                                    167,
-                                  ).withOpacity(0.4)
-                                : Colors.red.withOpacity(0.3),
+                                    ? Color.fromARGB(
+                                      255,
+                                      5,
+                                      5,
+                                      167,
+                                    ).withOpacity(0.4)
+                                    : Colors.red.withOpacity(0.3),
                             offset: const Offset(4, 4),
                             blurRadius: 12,
                             spreadRadius: 1,
@@ -280,11 +282,7 @@ class _LoginPageState extends State<LoginPage> {
                           ).colorScheme.copyWith(secondary: Colors.transparent),
                         ),
                         child: Focus(
-                          onFocusChange: (hasFocus) {
-                            // setState(() {
-                            //   _isEmailFocused = hasFocus;
-                            // });
-                          },
+                          onFocusChange: (hasFocus) {},
                           child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -292,17 +290,17 @@ class _LoginPageState extends State<LoginPage> {
                               fontSize: 16,
                               color:
                                   _isEmailValid || _emailController.text.isEmpty
-                                  ? Colors.black87
-                                  : Colors.red.shade700,
+                                      ? Colors.black87
+                                      : Colors.red.shade700,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'dilleragip@gmail.com',
+                              hintText: 'test@gmail.com',
                               hintStyle: TextStyle(
                                 color:
                                     _isEmailValid ||
-                                        _emailController.text.isEmpty
-                                    ? Colors.grey.shade500
-                                    : Colors.red.shade300,
+                                            _emailController.text.isEmpty
+                                        ? Colors.grey.shade500
+                                        : Colors.red.shade300,
                               ),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
@@ -311,23 +309,25 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               fillColor: Colors.transparent,
                               filled: true,
-                              suffixIcon: _emailController.text.isNotEmpty
-                                  ? Icon(
-                                      _isEmailValid
-                                          ? Icons.check_circle
-                                          : Icons.error,
-                                      color: _isEmailValid
-                                          ? Colors.green
-                                          : Colors.red,
-                                      size: 20,
-                                    )
-                                  : null,
+                              suffixIcon:
+                                  _emailController.text.isNotEmpty
+                                      ? Icon(
+                                        _isEmailValid
+                                            ? Icons.check_circle
+                                            : Icons.error,
+                                        color:
+                                            _isEmailValid
+                                                ? Colors.green
+                                                : Colors.red,
+                                        size: 20,
+                                      )
+                                      : null,
                             ),
                           ),
                         ),
                       ),
                     ),
-                    // Email error message
+
                     if (_emailError.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Padding(
@@ -355,7 +355,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                     const SizedBox(height: 22),
-                    // Neumorphic password field
+
                     const Text(
                       'Password',
                       style: TextStyle(
@@ -436,23 +436,25 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isButtonEnabled && !_isLoading
-                            ? _handleLogin
-                            : null,
+                        onTap:
+                            _isButtonEnabled && !_isLoading
+                                ? _handleLogin
+                                : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           curve: Curves.ease,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _isButtonEnabled && !_isLoading
-                                  ? [
-                                      const Color.fromARGB(255, 1, 25, 59),
-                                      const Color.fromARGB(255, 1, 29, 48),
-                                    ]
-                                  : [
-                                      Colors.grey.shade400,
-                                      Colors.grey.shade500,
-                                    ],
+                              colors:
+                                  _isButtonEnabled && !_isLoading
+                                      ? [
+                                        const Color.fromARGB(255, 1, 25, 59),
+                                        const Color.fromARGB(255, 1, 29, 48),
+                                      ]
+                                      : [
+                                        Colors.grey.shade400,
+                                        Colors.grey.shade500,
+                                      ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -515,7 +517,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 30),
 
-                    // Divider with "OR" text
                     Row(
                       children: [
                         Expanded(
@@ -546,78 +547,83 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 30),
 
-                    // Google Sign-In Button
                     SizedBox(
                       width: double.infinity,
                       child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () async {
-                                setState(() {
-                                  _isLoading = true;
-                                });
+                        onTap:
+                            _isLoading
+                                ? null
+                                : () async {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
 
-                                try {
-                                  final googleAuthService = GoogleAuthService();
-                                  final result = await googleAuthService
-                                      .signInWithGoogle();
+                                  try {
+                                    final googleAuthService =
+                                        GoogleAuthService();
+                                    final result =
+                                        await googleAuthService
+                                            .signInWithGoogle();
 
-                                  if (result != null && result.user != null) {
-                                    // Successfully signed in with Google
+                                    if (result != null && result.user != null) {
+                                      UserProfile.instance.clear();
+
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Welcome back ${result.user!.displayName ?? result.user!.email}!',
+                                            ),
+                                            backgroundColor: Colors.green,
+                                            duration: const Duration(
+                                              seconds: 2,
+                                            ),
+                                          ),
+                                        );
+
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          AppRoutes.main,
+                                          (route) => false,
+                                        );
+                                      }
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Google Sign-In failed. Please try again.',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
                                     if (mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            'Welcome back ${result.user!.displayName ?? result.user!.email}!',
+                                            'Google Sign-In not available. Please configure Firebase first.',
                                           ),
-                                          backgroundColor: Colors.green,
-                                          duration: const Duration(seconds: 2),
+                                          backgroundColor: Colors.orange,
                                         ),
                                       );
-
-                                      Navigator.pushNamedAndRemoveUntil(
-                                        context,
-                                        AppRoutes.profile,
-                                        (route) => false,
-                                      );
                                     }
-                                  } else {
-                                    // Handle sign-in failure
+                                  } finally {
                                     if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Google Sign-In failed. Please try again.',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
                                     }
                                   }
-                                } catch (e) {
-                                  // Handle Firebase/Google Sign-In errors
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Google Sign-In not available. Please configure Firebase first.',
-                                        ),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setState(() {
-                                      _isLoading = false;
-                                    });
-                                  }
-                                }
-                              },
+                                },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
@@ -650,7 +656,6 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 )
                               else ...[
-                                // Google Icon
                                 Container(
                                   width: 24,
                                   height: 24,
@@ -658,7 +663,7 @@ class _LoginPageState extends State<LoginPage> {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Image.asset(
-                                    'assert/google_logo.png',
+                                    'assets/google_logo.png',
                                     width: 24,
                                     height: 24,
                                     fit: BoxFit.contain,

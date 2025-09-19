@@ -100,14 +100,15 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         children: [
           ModernWavyAppBar(
             height: 140,
-            onBack: () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.login,
-              (route) => false,
-            ),
+            onBack:
+                () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                ),
             child: Stack(children: [const SizedBox(height: 48)]),
           ),
-          // Title positioned below app bar
+
           Positioned(
             top: 130,
             left: 0,
@@ -264,7 +265,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       width: double.infinity,
                       child: GestureDetector(
                         onTap: () {
-                          // Save user details to singleton
                           UserProfile.instance.update(
                             name: _nameController.text,
                             age: _ageController.text,
@@ -302,18 +302,20 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w600,
-                                  color: _isButtonEnabled
-                                      ? Colors.white
-                                      : Colors.white,
+                                  color:
+                                      _isButtonEnabled
+                                          ? Colors.white
+                                          : Colors.white,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Icon(
                                 Icons.arrow_forward_rounded,
                                 size: 22,
-                                color: _isButtonEnabled
-                                    ? Colors.white
-                                    : Colors.grey,
+                                color:
+                                    _isButtonEnabled
+                                        ? Colors.white
+                                        : Colors.grey,
                               ),
                             ],
                           ),

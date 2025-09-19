@@ -42,17 +42,17 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyB-4vdrbsycKEVQq8eeHcLAyzlTGS_SsXs',
-    appId: '1:905297662812:web:539f5dd0080434f75c6799',
+    appId: '1:905297662812:web:c8bab3046172c6d85c6799',
     messagingSenderId: '905297662812',
     projectId: 'health-assistant-a4ab2',
     authDomain: 'health-assistant-a4ab2.firebaseapp.com',
     storageBucket: 'health-assistant-a4ab2.firebasestorage.app',
-    measurementId: 'G-8RXFHRRX3P',
+    measurementId: 'G-370K6ZR9WT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAiSM_vBspKrcFFgq5kuQTenZtAQlA7Or4',
-    appId: '1:905297662812:android:ef593e4fc3a409fb5c6799',
+    appId: '1:905297662812:android:22d2fed412855bc05c6799',
     messagingSenderId: '905297662812',
     projectId: 'health-assistant-a4ab2',
     storageBucket: 'health-assistant-a4ab2.firebasestorage.app',
@@ -60,32 +60,34 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCOqFjFHXucjOG7WhITRLFohZiyqeEdPGM',
-    appId: '1:905297662812:ios:faa1ab2e7a5912dc5c6799',
+    appId: '1:905297662812:ios:e0f340cdd4312cdd5c6799',
     messagingSenderId: '905297662812',
     projectId: 'health-assistant-a4ab2',
     storageBucket: 'health-assistant-a4ab2.firebasestorage.app',
+    androidClientId: '905297662812-6dkih4h36mg2mqrnruj8mdjpgu73g1va.apps.googleusercontent.com',
     iosClientId: '905297662812-k3sj74l9ekp5nlcgn79hmg964job735u.apps.googleusercontent.com',
     iosBundleId: 'com.example.project',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCOqFjFHXucjOG7WhITRLFohZiyqeEdPGM',
-    appId: '1:905297662812:ios:faa1ab2e7a5912dc5c6799',
+    appId: '1:905297662812:ios:e0f340cdd4312cdd5c6799',
     messagingSenderId: '905297662812',
     projectId: 'health-assistant-a4ab2',
     storageBucket: 'health-assistant-a4ab2.firebasestorage.app',
+    androidClientId: '905297662812-6dkih4h36mg2mqrnruj8mdjpgu73g1va.apps.googleusercontent.com',
     iosClientId: '905297662812-k3sj74l9ekp5nlcgn79hmg964job735u.apps.googleusercontent.com',
     iosBundleId: 'com.example.project',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyB-4vdrbsycKEVQq8eeHcLAyzlTGS_SsXs',
-    appId: '1:905297662812:web:4a6da30bb709ebac5c6799',
+    appId: '1:905297662812:web:773056735390e5405c6799',
     messagingSenderId: '905297662812',
     projectId: 'health-assistant-a4ab2',
     authDomain: 'health-assistant-a4ab2.firebaseapp.com',
     storageBucket: 'health-assistant-a4ab2.firebasestorage.app',
-    measurementId: 'G-DQ2X1RQ8DS',
+    measurementId: 'G-B1NS2JBN0J',
   );
 
 }

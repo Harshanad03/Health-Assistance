@@ -5,8 +5,12 @@ class ModernWavyAppBar extends StatelessWidget {
   final Widget? child;
   final VoidCallback? onBack;
 
-  const ModernWavyAppBar({Key? key, this.height = 140, this.child, this.onBack})
-    : super(key: key);
+  const ModernWavyAppBar({
+    super.key,
+    this.height = 140,
+    this.child,
+    this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +19,6 @@ class ModernWavyAppBar extends StatelessWidget {
       height: height,
       child: Stack(
         children: [
-          // 1. Draw the wavy background first
           ClipPath(
             clipper: _ModernWavyClipper(),
             child: Container(
@@ -31,12 +34,12 @@ class ModernWavyAppBar extends StatelessWidget {
               ),
             ),
           ),
-          // 2. Draw the child (title, etc)
+
           if (child != null)
             Positioned.fill(
               child: Align(alignment: Alignment.topCenter, child: child),
             ),
-          // 3. Draw the back arrow LAST so it's always on top
+
           if (onBack != null)
             SafeArea(
               child: Padding(

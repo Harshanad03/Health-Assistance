@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Get current user
   User? get currentUser => _auth.currentUser;
 
-  // Check if user is signed in
   bool get isSignedIn => _auth.currentUser != null;
 
-  // Listen to authentication state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign up with email and password
   Future<AuthResult> signUpWithEmailAndPassword({
     required String email,
     required String password,
@@ -25,7 +21,6 @@ class FirebaseAuthService {
             password: password,
           );
 
-      // Update user profile with display name (email without domain)
       final displayName = email.split('@')[0];
       await userCredential.user?.updateDisplayName(displayName);
 
@@ -54,7 +49,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Sign in with email and password
   Future<AuthResult> signInWithEmailAndPassword({
     required String email,
     required String password,
@@ -90,7 +84,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Sign out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -99,7 +92,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Send password reset email
   Future<AuthResult> sendPasswordResetEmail(String email) async {
     try {
       print(
@@ -153,7 +145,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Update user profile
   Future<AuthResult> updateUserProfile({
     String? displayName,
     String? photoURL,
@@ -173,7 +164,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Delete user account
   Future<AuthResult> deleteUserAccount() async {
     try {
       final user = _auth.currentUser;
@@ -190,7 +180,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Get user profile information
   Map<String, String> getUserProfile() {
     final user = _auth.currentUser;
     if (user != null) {
@@ -208,7 +197,6 @@ class FirebaseAuthService {
   }
 }
 
-// Result class for authentication operations
 class AuthResult {
   final bool isSuccess;
   final User? user;

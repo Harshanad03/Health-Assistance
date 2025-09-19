@@ -28,7 +28,6 @@ class _SplashScreen1State extends State<SplashScreen1>
   void initState() {
     super.initState();
 
-    // Initialize animation controllers
     _imageController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -44,7 +43,6 @@ class _SplashScreen1State extends State<SplashScreen1>
       vsync: this,
     );
 
-    // Define animations
     _imageScale = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _imageController, curve: Curves.elasticOut),
     );
@@ -68,10 +66,8 @@ class _SplashScreen1State extends State<SplashScreen1>
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
 
-    // Start animations
     _startAnimations();
 
-    // Auto-navigate after 8 seconds
     _autoNavigateTimer = Timer(const Duration(seconds: 8), () {
       if (mounted) {
         _navigateToLogin();
@@ -80,18 +76,15 @@ class _SplashScreen1State extends State<SplashScreen1>
   }
 
   void _startAnimations() async {
-    // Start image animation
     await _imageController.forward();
 
-    // Start quote animation
     await _quoteController.forward();
 
-    // Start fade animation
     await _fadeController.forward();
   }
 
   void _navigateToLogin() {
-    SplashManager.navigateToLogin(context);
+    SplashManager.navigateBasedOnAuth(context);
   }
 
   @override
@@ -105,7 +98,6 @@ class _SplashScreen1State extends State<SplashScreen1>
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar to light mode for white text
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     return Scaffold(
@@ -113,14 +105,12 @@ class _SplashScreen1State extends State<SplashScreen1>
       body: SafeArea(
         child: Stack(
           children: [
-            // Main content scrollable
             SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   const SizedBox(height: 100),
 
-                  // Centered image with animations
                   AnimatedBuilder(
                     animation: _imageController,
                     builder: (context, child) {
@@ -132,7 +122,7 @@ class _SplashScreen1State extends State<SplashScreen1>
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: Image.asset(
-                                'assert/splash2.png',
+                                'assets/splash2.png',
                                 width: 300,
                                 height: 330,
                                 fit: BoxFit.cover,
@@ -163,7 +153,6 @@ class _SplashScreen1State extends State<SplashScreen1>
 
                   const SizedBox(height: 90),
 
-                  // Quote section with neumorphic design and animations
                   AnimatedBuilder(
                     animation: _quoteController,
                     builder: (context, child) {
@@ -231,7 +220,7 @@ class _SplashScreen1State extends State<SplashScreen1>
                                   ),
                                   const SizedBox(height: 15),
                                   const Text(
-                                    '- Health Assistant',
+                                    '- AUVI',
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: Color(0xFF6B7A90),
@@ -253,7 +242,6 @@ class _SplashScreen1State extends State<SplashScreen1>
               ),
             ),
 
-            // Auto-navigation indicator
             AnimatedBuilder(
               animation: _fadeController,
               builder: (context, child) {
