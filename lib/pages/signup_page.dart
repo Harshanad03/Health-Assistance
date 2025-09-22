@@ -27,11 +27,24 @@ class _SignupPageState extends State<SignupPage> {
   bool _isPasswordMatch = true;
   String _passwordMatchError = '';
   bool _showPasswordErrors = false;
+  bool _isPasswordValid = true;
+  String _passwordError = '';
   bool _isLoading = false;
   final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
 
   void _validateFields() {
     setState(() {
+      // Check password length (only show error if user has attempted to submit)
+      if (_showPasswordErrors &&
+          _passwordController.text.isNotEmpty &&
+          _passwordController.text.length < 8) {
+        _isPasswordValid = false;
+        _passwordError = 'Password should be at least 8 characters long';
+      } else {
+        _isPasswordValid = true;
+        _passwordError = '';
+      }
+
       // Check if passwords match (only show error if user has attempted to submit)
       if (_showPasswordErrors &&
           _confirmPasswordController.text.isNotEmpty &&
@@ -389,12 +402,29 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFE8EAFE), Color(0xFFD6E0FF)],
+                        gradient: LinearGradient(
+                          colors:
+                              _isPasswordValid ||
+                                      _passwordController.text.isEmpty
+                                  ? [
+                                    const Color(0xFFE8EAFE),
+                                    const Color(0xFFD6E0FF),
+                                  ]
+                                  : [
+                                    const Color(0xFFFFE8E8),
+                                    const Color(0xFFFFD6D6),
+                                  ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(30),
+                        border:
+                            _isPasswordValid || _passwordController.text.isEmpty
+                                ? null
+                                : Border.all(
+                                  color: Colors.red.withOpacity(0.6),
+                                  width: 2,
+                                ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withOpacity(0.8),
@@ -403,12 +433,16 @@ class _SignupPageState extends State<SignupPage> {
                             spreadRadius: 1,
                           ),
                           BoxShadow(
-                            color: const Color.fromARGB(
-                              255,
-                              5,
-                              5,
-                              167,
-                            ).withOpacity(0.4),
+                            color:
+                                _isPasswordValid ||
+                                        _passwordController.text.isEmpty
+                                    ? const Color.fromARGB(
+                                      255,
+                                      5,
+                                      5,
+                                      167,
+                                    ).withOpacity(0.4)
+                                    : Colors.red.withOpacity(0.3),
                             offset: const Offset(4, 4),
                             blurRadius: 12,
                             spreadRadius: 1,
@@ -428,14 +462,23 @@ class _SignupPageState extends State<SignupPage> {
                         child: TextField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey,
+                            color:
+                                _isPasswordValid ||
+                                        _passwordController.text.isEmpty
+                                    ? Colors.black87
+                                    : Colors.red.shade700,
                           ),
+                          cursorColor: Colors.black87,
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
-                            hintStyle: const TextStyle(
-                              color: Colors.grey,
+                            hintStyle: TextStyle(
+                              color:
+                                  _isPasswordValid ||
+                                          _passwordController.text.isEmpty
+                                      ? Colors.grey
+                                      : Colors.red.shade300,
                               fontSize: 16,
                             ),
                             border: InputBorder.none,
@@ -445,43 +488,53 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             fillColor: Colors.transparent,
                             filled: true,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
+                            suffixIcon:
+                                _passwordController.text.isNotEmpty &&
+                                        _showPasswordErrors
+                                    ? Icon(
+                                      _isPasswordValid
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color:
+                                          _isPasswordValid
+                                              ? Colors.green
+                                              : Colors.red,
+                                      size: 20,
+                                    )
+                                    : IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                    ),
                           ),
                         ),
                       ),
                     ),
 
-                    // Password length requirement message
-                    if (_showPasswordErrors &&
-                        _passwordController.text.isNotEmpty &&
-                        _passwordController.text.length < 8) ...[
+                    if (_passwordError.isNotEmpty && _showPasswordErrors) ...[
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.only(left: 18),
                         child: Row(
                           children: [
                             Icon(
-                              Icons.info_outline,
-                              color: Colors.orange.shade600,
+                              Icons.error_outline,
+                              color: Colors.red.shade600,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'Password should be at least 8 characters long',
+                                _passwordError,
                                 style: TextStyle(
-                                  color: Colors.orange.shade600,
+                                  color: Colors.red.shade600,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -582,6 +635,7 @@ class _SignupPageState extends State<SignupPage> {
                                     ? Colors.black87
                                     : Colors.red.shade700,
                           ),
+                          cursorColor: Colors.grey.shade600,
                           decoration: InputDecoration(
                             hintText: 'Re-enter your password',
                             hintStyle: TextStyle(
